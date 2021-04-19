@@ -1,6 +1,12 @@
 import React, {Component} from 'react';
 import {Text, View, StyleSheet, Animated, PanResponder} from 'react-native';
 
+//Decay Explanation
+// The Animated.decay call is primarily used for dragging and gesture animations. All it requires is you to provide
+// a velocity in an x and y direction as well as a friction to slow it down. This means you can create realistic
+//  throwing animations, etc.
+// The primary use case is for gesture animations after a user has released their finger.
+
 class App extends Component {
   constructor(props) {
     super(props);
