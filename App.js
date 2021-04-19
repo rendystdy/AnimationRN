@@ -18,6 +18,7 @@ class App extends Component {
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
+        //extraOffset
         this.state.animation.extractOffset();
         // this.state.animation.setOffset({
         //   x: this.x,
