@@ -11,38 +11,35 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      animation: new Animated.Value(0),
+      animation: new Animated.Value(1),
     };
   }
 
   startAnimation = () => {
     Animated.timing(this.state.animation, {
-      toValue: 1,
+      toValue: 3,
       duration: 1500,
     }).start(() => {
-      this.state.animation.setValue(0);
+      Animated.timing(this.state.animation, {
+        toValue: 0,
+        duration: 300,
+      }).start();
     });
   };
 
   render() {
-    const xInterpolate = this.state.animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: ['0deg', '360deg'],
-    });
-
-    const yInterpolate = this.state.animation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: ['0deg', '0deg', '180deg'],
+    const scaleInterpolate = this.state.animation.interpolate({
+      inputRange: [1, 2],
+      outputRange: [1, 2],
+      // extrapolate: 'clamp'
+      // extrapolate: 'identity'
+      extrapolateLeft: 'clamp'
     });
 
     const animatedStyle = {
       transform: [
         {
-          rotateX: xInterpolate,
-          
-        },
-        {
-          rotateY: yInterpolate,
+          scale: scaleInterpolate,
         }
       ],
     };
