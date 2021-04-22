@@ -1,79 +1,64 @@
 import React, {Component} from 'react';
-import {Text, View, StyleSheet, Animated, PanResponder} from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Animated,
+  TouchableWithoutFeedback,
+} from 'react-native';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      animation: new Animated.ValueXY(0),
+      animation: new Animated.Value(0),
     };
-    // this.x = 0;
-    // this.y = 0;
+  }
 
-    // this.state.animation.addListener(value => {
-    //   this.x = value.x,
-    //   this.y = value.y
-    // });
-    this._panResponder = PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        this.state.animation.extractOffset();
-        // this.state.animation.setOffset({
-        //   x: this.x,
-        //   y: this.y,
-        // });
-        // this.state.animation.setValue({
-        //   x: 0,
-        //   y: 0,
-        // });
-      },
-      onPanResponderMove: Animated.event([
-        null,
-        {
-          dx: this.state.animation.x,
-          dy: this.state.animation.y,
-        },
-      ]),
-      onPanResponderRelease: (e, {vx, vy}) => {
-        Animated.decay(this.state.animation, {
-          velocity: {x: vx, y: vy},
-          deceleration: 0.997,
-        }).start();
-      },
+  startAnimation = () => {
+    Animated.timing(this.state.animation, {
+      toValue: 1,
+      duration: 1500,
+    }).start(() => {
+      Animated.timing(this.state.animation, {
+        toValue: 2,
+        duration: 300,
+      }).start();
     });
-  }
-
-  componentDidMount() {
-    // this._panResponder = PanResponder.create({
-    //   onStartShouldSetPanResponder: () => true,
-    //   onMoveShouldSetPanResponder: () => true,
-    //   onPanResponderMove: Animated.event([
-    //     null,
-    //     {
-    //       dx: this.state.animation.x,
-    //       dy: this.state.animation.y,
-    //     },
-    //   ]),
-    //   onPanResponderRelease: (e, {vx, vy}) => {
-    //     Animated.decay(this.state.animation, {
-    //       velocity: {x: vx, y: vy},
-    //       deceleration: 0.997,
-    //     }).start();
-    //   },
-    // });
-  }
+  };
 
   render() {
+    const animatedInterpolated = this.state.animation.interpolate({
+      inputRange: [0, 1, 2],
+      outputRange: [0, 300, 0],
+    });
+
+    const interpolatedInterpolate = animatedInterpolated.interpolate({
+      inputRange: [0, 300],
+      outputRange: [1, 0.5],
+    });
+
+    const translateXInterpolate = animatedInterpolated.interpolate({
+      inputRange: [0, 30, 50, 80, 100, 150, 299, 300],
+      outputRange: [0, -30, -50, 80, -100, 300, 0, -100 ]
+    });
+
     const animatedStyle = {
-      transform: this.state.animation.getTranslateTransform(),
+      transform: [
+        {
+          translateY: animatedInterpolated,
+        },
+        {
+          translateX: translateXInterpolate
+        }
+      ],
+      opacity: interpolatedInterpolate,
     };
     return (
       <View style={styles.container}>
-        <Animated.View
-          style={[styles.box, animatedStyle]}
-          {...this._panResponder.panHandlers}
-        />
+        <TouchableWithoutFeedback onPress={this.startAnimation}>
+          <Animated.View style={[styles.box, animatedStyle]} />
+        </TouchableWithoutFeedback>
       </View>
     );
   }
@@ -82,8 +67,8 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   box: {
-    width: 50,
-    height: 50,
+    width: 150,
+    height: 150,
     backgroundColor: 'tomato',
   },
 });
