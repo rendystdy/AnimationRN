@@ -20,39 +20,31 @@ class App extends Component {
       toValue: 1,
       duration: 1500,
     }).start(() => {
-      Animated.timing(this.state.animation, {
-        toValue: 2,
-        duration: 300,
-      }).start();
+      this.state.animation.setValue(0);
     });
   };
 
   render() {
-    const animatedInterpolated = this.state.animation.interpolate({
-      inputRange: [0, 1, 2],
-      outputRange: [0, 300, 0],
+    const xInterpolate = this.state.animation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
     });
 
-    const interpolatedInterpolate = animatedInterpolated.interpolate({
-      inputRange: [0, 300],
-      outputRange: [1, 0.5],
-    });
-
-    const translateXInterpolate = animatedInterpolated.interpolate({
-      inputRange: [0, 30, 50, 80, 100, 150, 299, 300],
-      outputRange: [0, -30, -50, 80, -100, 300, 0, -100 ]
+    const yInterpolate = this.state.animation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: ['0deg', '0deg', '180deg'],
     });
 
     const animatedStyle = {
       transform: [
         {
-          translateY: animatedInterpolated,
+          rotateX: xInterpolate,
+          
         },
         {
-          translateX: translateXInterpolate
+          rotateY: yInterpolate,
         }
       ],
-      opacity: interpolatedInterpolate,
     };
     return (
       <View style={styles.container}>
