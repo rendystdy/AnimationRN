@@ -1,79 +1,53 @@
 import React, {Component} from 'react';
 import {
+  AppRegistry,
+  StyleSheet,
   Text,
   View,
-  StyleSheet,
   Animated,
-  ScrollView,
-  TouchableOpacity,
+  TouchableWithoutFeedback,
 } from 'react-native';
+
+import {interpolateNumber, interpolateRgb} from 'd3-interpolate';
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       animation: new Animated.Value(0),
     };
-    this._enabled = true;
+    this.positionInterpolate = interpolateNumber(0, 200);
+    this.colorInterpolate = interpolateRgb('rgb(255,99,71)', 'rgb(99,71,255)');
   }
 
-  handleToggle = () => {
-    this._enabled = !this._enabled;
-    let style = [styles.scroll];
+  componentDidMount() {
+    this.state.animation.addListener(({value}) => {
+      const position = this.positionInterpolate(value);
+      const color = this.colorInterpolate(value);
 
-    if (!this._enabled) {
-      style.push(styles.hide);
-    } else {
-      // style.push(styles.show)
-    }
-
-    this._scroll.setNativeProps({
-      scrollEnabled: this._enabled,
-      style,
+      const style = [
+        styles.box,
+        {
+          backgroundColor: color,
+          transform: [{translateY: position}],
+        },
+      ];
+      this._view.setNativeProps({style});
     });
-  };
+  }
 
-  startAnimation = () => {
+  handlePress = () => {
     Animated.timing(this.state.animation, {
       toValue: 1,
-      duration: 1500,
-    }).start(() => {
-      Animated.timing(this.state.animation, {
-        toValue: 0,
-        duration: 300,
-      }).start();
-    });
+      duration: 500,
+    }).start();
   };
 
   render() {
-    const bgInterpolate = this.state.animation.interpolate({
-      inputRange: [0, 3000],
-      outputRange: ['rgb(255,99,71)', 'rgb(99,71,255)'],
-    });
-    const scrollStyle = {
-      backgroundColor: bgInterpolate,
-    };
-
     return (
       <View style={styles.container}>
-        <TouchableOpacity onPress={this.handleToggle}>
-          <Text>Toggle</Text>
-        </TouchableOpacity>
-
-        <ScrollView
-          style={styles.scroll}
-          ref={scroll => (this._scroll = scroll)}
-          scrollEventThrottle={16}
-          onScroll={Animated.event([
-            {
-              nativeEvent: {
-                contentOffset: {
-                  y: this.state.animation,
-                },
-              },
-            },
-          ])}>
-          <Animated.View style={[styles.fakeContent, scrollStyle]} />
-        </ScrollView>
+        <TouchableWithoutFeedback onPress={this.handlePress}>
+          <View style={styles.box} ref={view => (this._view = view)} />
+        </TouchableWithoutFeedback>
       </View>
     );
   }
@@ -82,20 +56,12 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  scroll: {
-    flex: 1,
-    opacity: 1,
-  },
-  hide: {
-    opacity: 0,
-  },
-  show: {
-    opacity: 1,
-  },
-  fakeContent: {
-    height: 3000,
+  box: {
+    width: 50,
+    height: 50,
     backgroundColor: 'tomato',
   },
 });
