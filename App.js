@@ -8,45 +8,57 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 
-import {interpolateNumber, interpolateRgb} from 'd3-interpolate';
+import Svg, {Path} from 'react-native-svg';
+import {interpolatePath} from 'd3-interpolate-path';
+
+const startPath = `M45,50a5,5 0 1,0 10,0a5,5 0 1,0 -10,0`;
+const endPath = `M20,50a30,30 0 1,0 60,0a30,30 0 1,0 -60,0`;
+
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       animation: new Animated.Value(0),
     };
-    this.positionInterpolate = interpolateNumber(0, 200);
-    this.colorInterpolate = interpolateRgb('rgb(255,99,71)', 'rgb(99,71,255)');
   }
 
   componentDidMount() {
-    this.state.animation.addListener(({value}) => {
-      const position = this.positionInterpolate(value);
-      const color = this.colorInterpolate(value);
+    const pathInterpolate = interpolatePath(startPath, endPath);
 
-      const style = [
-        styles.box,
-        {
-          backgroundColor: color,
-          transform: [{translateY: position}],
-        },
-      ];
-      this._view.setNativeProps({style});
+    this.state.animation.addListener(({ value }) => {
+      const path = pathInterpolate(value);
+      this._path.setNativeProps({
+        d: path,
+      });
     });
+
   }
 
   handlePress = () => {
-    Animated.timing(this.state.animation, {
-      toValue: 1,
-      duration: 500,
-    }).start();
+    Animated.sequence([
+      Animated.timing(this.state.animation, {
+        toValue: 1,
+        duration: 500,
+      }),
+      Animated.delay(1500),
+      Animated.timing(this.state.animation, {
+        toValue: 0,
+        duration: 500,
+      }),
+    ]).start();
   };
 
   render() {
     return (
       <View style={styles.container}>
         <TouchableWithoutFeedback onPress={this.handlePress}>
-          <View style={styles.box} ref={view => (this._view = view)} />
+          <Svg width={150} height={150}>
+            <Path
+              d={startPath}
+              stroke="black"
+              ref={path => (this._path = path)}
+            />
+          </Svg>
         </TouchableWithoutFeedback>
       </View>
     );
@@ -58,11 +70,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  box: {
-    width: 50,
-    height: 50,
-    backgroundColor: 'tomato',
   },
 });
 

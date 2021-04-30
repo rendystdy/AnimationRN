@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "d3-interpolate": "^2.0.1",
+    "d3-interpolate-path": "^2.2.1",
     "react": "16.9.0",
-    "react-native": "0.61.5"
+    "react-native": "0.61.5",
+    "react-native-svg": "^12.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.6.2",
