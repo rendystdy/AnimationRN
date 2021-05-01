@@ -5,7 +5,8 @@ import {
   Text,
   View,
   Animated,
-  TouchableWithoutFeedback,
+  PanResponder,
+  Dimensions,
 } from 'react-native';
 
 import Svg, {Path} from 'react-native-svg';
@@ -19,23 +20,39 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      animation: new Animated.Value(0),
+      animation: new Animated.ValueXY(0),
     };
+    this._panResponder = PanResponder.create({
+      onStartShouldSetPanResponder: (evt, gestureState) => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) => true,
+      onPanResponderGrant: (e, gestureState) => {
+        this.state.animation.extractOffset();
+      },
+      onPanResponderMove: Animated.event([
+        null,
+        {
+          dx: this.state.animation.x,
+          dy: this.state.animation.y,
+        },
+      ]),
+    });
   }
 
   componentDidMount() {
-    const pathInterpolate = interpolate(startPath, endPath, {
-      maxSegmentLength: 1,
-    });
-
-    this.state.animation.addListener(({value}) => {
-      console.log({value});
-      const path = pathInterpolate(value);
-      console.log(path);
-      this._path.setNativeProps({
-        d: path,
-      });
-    });
+    // this._panResponder = PanResponder.create({
+    //   onStartShouldSetPanResponder: (evt, gestureState) => true,
+    //   onMoveShouldSetPanResponder: (evt, gestureState) => true,
+    //   onPanResponderGrant: (e, gestureState) => {
+    //     this.state.animation.extractOffset();
+    //   },
+    //   onPanResponderMove: Animated.event([
+    //     null,
+    //     {
+    //       dx: this.state.animation.x,
+    //       dy: this.state.animation.y,
+    //     },
+    //   ]),
+    // });
   }
 
   handlePress = () => {
@@ -53,18 +70,47 @@ class App extends Component {
   };
 
   render() {
+    const {height} = Dimensions.get('window');
+
+    const inputRange = [0, height / 2 - 50.1, height / 2, height];
+
+    const backgroundColorInterpolate = this.state.animation.y.interpolate({
+      inputRange,
+      outputRange: [
+        'rgb(99,71,255)',
+        'rgb(99,71,255)',
+        'rgb(255,0,0)',
+        'rgb(255,0,0)',
+      ],
+    });
+
+    const flipInterpolate = this.state.animation.y.interpolate({
+      inputRange,
+      outputRange: [1, 1, -1, -1],
+    });
+
+    const animatedStyles = {
+      backgroundColor: backgroundColorInterpolate,
+      transform: [
+        ...this.state.animation.getTranslateTransform(),
+        {
+          scale: flipInterpolate,
+        },
+      ],
+    };
     return (
       <View style={styles.container}>
-        <TouchableWithoutFeedback onPress={this.handlePress}>
-          <Svg width={150} height={150}>
-            <Path
-              scale={3}
-              d={startPath}
-              stroke="black"
-              ref={path => (this._path = path)}
-            />
-          </Svg>
-        </TouchableWithoutFeedback>
+        <View style={[styles.top, styles.center, styles.container]}>
+          <Text>Good</Text>
+        </View>
+        <View style={[styles.center, styles.container]}>
+          <Text>Bad</Text>
+        </View>
+        <Animated.View
+          {...this._panResponder.panHandlers}
+          style={[styles.box, styles.center, animatedStyles]}>
+          <Text>Box</Text>
+        </Animated.View>
       </View>
     );
   }
@@ -73,6 +119,19 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  box: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    top: 20,
+    left: 0,
+  },
+  top: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#AAA',
+  },
+  center: {
     alignItems: 'center',
     justifyContent: 'center',
   },
