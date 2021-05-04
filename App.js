@@ -10,51 +10,55 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      animation: new Animated.Value(1),
-      visible: true,
+      animation: new Animated.Value(0),
+      opacity: new Animated.Value(1),
     };
   }
 
   componentDidMount() {}
 
   startAnimation = () => {
-    Animated.timing(this.state.animation, {
-      toValue: 0,
-      duration: 1500,
-    }).start(({finished}) => {
-      setTimeout(() => {
-        if (finished) {
-          this.setState({visible: false});
-        } else {
-          Animated.spring(this.state.animation, {
-            toValue: 1,
-          }).start();
-        }
-      }, 0);
+    Animated.parallel(
+      [
+        Animated.timing(this.state.animation, {
+          toValue: 500,
+          duration: 1500,
+        }),
+        Animated.timing(this.state.opacity, {
+          toValue: 0,
+          duration: 1500,
+        }),
+      ],
+      // , { stopTogether: false }
+    ).start(({finished}) => {
+      // if (!finished) {
+      //   // RESET
+      //   setTimeout(() => {
+      //     Animated.spring(this.state.animation, {
+      //       toValue: 0,
+      //     }).start();
+      //     Animated.spring(this.state.opacity, {
+      //       toValue: 1,
+      //     }).start();
+      //   }, 0)
+      // }
     });
+
+    setTimeout(() => {
+      this.state.opacity.setValue(1);
+    }, 500);
   };
 
   render() {
-    const translateYInterpolate = this.state.animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [500, 0],
-    });
-
     const animatedStyles = {
-      opacity: this.state.animation,
-      transform: [
-        {
-          translateY: translateYInterpolate,
-        },
-      ],
+      opacity: this.state.opacity,
+      transform: [{translateY: this.state.animation}],
     };
     return (
       <View style={styles.container}>
-        {this.state.visible && (
-          <TouchableWithoutFeedback onPress={this.startAnimation}>
-            <Animated.View style={[styles.box, animatedStyles]} />
-          </TouchableWithoutFeedback>
-        )}
+        <TouchableWithoutFeedback onPress={this.startAnimation}>
+          <Animated.View style={[styles.box, animatedStyles]} />
+        </TouchableWithoutFeedback>
       </View>
     );
   }
