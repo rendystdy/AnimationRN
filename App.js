@@ -1,85 +1,136 @@
 import React, {Component, useRef} from 'react';
 import {
-  AppRegistry,
   StyleSheet,
   Text,
   View,
   Animated,
-  TouchableWithoutFeedback,
+  TouchableOpacity,
+  Dimensions,
 } from 'react-native';
-
-import Background from './background.jpg';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      index: 0,
+      questions: [
+        'Do you tend to follow directions when given?',
+        'Are you comfortable with the idea of standing and doing light physical activity most of the day?',
+        'Would you enjoy making sure your customers leave happy?',
+        'Are you willing to work nights and weekends (and possibly holidays)?',
+      ],
       animation: new Animated.Value(0),
-      opacity: new Animated.Value(1),
+      progress: new Animated.Value(0),
     };
   }
 
-  handlePress = () => {
+  reset = () => {
     this.state.animation.setValue(0);
-    this.state.opacity.setValue(1);
+    this.state.progress.setValue(0);
+    this.setState({
+      index: 0,
+    });
+  };
 
-    Animated.timing(this.state.animation, {
-      duration: 1500,
-      toValue: 1,
-    }).start(({finished}) => {
-      if (finished) {
-        Animated.timing(this.state.opacity, {
-          toValue: 0,
-          duration: 200,
-        }).start();
-      }
+  handleAnswer = () => {
+    Animated.parallel([
+      Animated.timing(this.state.progress, {
+        toValue: this.state.index + 1,
+        duration: 400,
+      }),
+      Animated.timing(this.state.animation, {
+        toValue: 1,
+        duration: 400,
+      }),
+    ]).start(() => {
+      this.setState(
+        state => {
+          return {
+            index: state.index + 1,
+          };
+        },
+        () => {
+          this.state.animation.setValue(0);
+        },
+      );
     });
   };
 
   render() {
-    const progressInterpolate = this.state.animation.interpolate({
+    const {index, questions} = this.state;
+    const {width} = Dimensions.get('window');
+
+    const nextQuestionInterpolate = this.state.animation.interpolate({
       inputRange: [0, 1],
-      outputRange: ['0%', '100%'],
-      extrapolate: 'clamp',
+      outputRange: [width, 0],
     });
 
-    const colorInterpolate = this.state.animation.interpolate({
+    const mainQuestionInterpolate = this.state.animation.interpolate({
       inputRange: [0, 1],
-      outputRange: ['rgb(71,255,99)', 'rgb(99,71,255)'],
+      outputRange: [0, -width],
+    });
+
+    const progressInterpolate = this.state.progress.interpolate({
+      inputRange: [0, questions.length],
+      outputRange: ['0%', '100%'],
     });
 
     const progressStyle = {
       width: progressInterpolate,
-      bottom: 0,
-
-      // height: progressInterpolate,
-      // right: 0,
-
-      // top: null,
-      // bottom: 0,
-      // width: progressInterpolate,
-      // height: 5,
-
-      opacity: this.state.opacity,
-      backgroundColor: colorInterpolate,
     };
+
+    const mainQuestionStyle = {
+      transform: [
+        {
+          translateX: mainQuestionInterpolate,
+        },
+      ],
+    };
+
+    const nextQuestionStyle = {
+      transform: [
+        {
+          translateX: nextQuestionInterpolate,
+        },
+      ],
+    };
+
+    const question = questions[index];
+    let nextQuestion;
+    if (index + 1 < questions.length) {
+      nextQuestion = questions[index + 1];
+    }
 
     return (
       <View style={styles.container}>
-        <TouchableWithoutFeedback onPress={this.handlePress}>
-          <View style={styles.button}>
-            <View style={StyleSheet.absoluteFill}>
-              <Animated.View
-                style={[
-                  styles.progress,
-                  progressStyle,
-                  styles.opacityBackground,
-                ]}
-              />
-            </View>
-            <Text style={styles.buttonText}>Get it!</Text>
-          </View>
-        </TouchableWithoutFeedback>
+        <View style={[styles.overlay, StyleSheet.absoluteFill]}>
+          <Animated.Text style={[styles.questionText, mainQuestionStyle]}>
+            {question}
+          </Animated.Text>
+          <Animated.Text style={[styles.questionText, nextQuestionStyle]}>
+            {nextQuestion}
+          </Animated.Text>
+        </View>
+
+        <View style={styles.progress}>
+          <Animated.View style={[styles.bar, progressStyle]} />
+        </View>
+
+        <TouchableOpacity
+          onPress={this.handleAnswer}
+          style={styles.option}
+          activeOpacity={0.7}>
+          <Text style={styles.optionText}>No</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={this.handleAnswer}
+          style={[styles.option, styles.yes]}
+          activeOpacity={0.7}>
+          <Text style={styles.optionText}>Yes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.close} onPress={this.reset}>
+          <Text style={styles.closeText}>X</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -88,30 +139,52 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  button: {
-    backgroundColor: '#e6537d',
-    borderRadius: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 60,
-    paddingVertical: 10,
-    overflow: 'hidden',
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 24,
-    backgroundColor: 'transparent',
+    backgroundColor: '#E22D4B',
+    flexDirection: 'row',
   },
   progress: {
     position: 'absolute',
     left: 0,
-    top: 0,
+    bottom: 0,
+    right: 0,
+    height: 10,
   },
-  opacityBackground: {
-    // backgroundColor: "rgba(255,255,255,.5)",
+  bar: {
+    height: '100%',
+    backgroundColor: '#FFF',
+  },
+  overlay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  questionText: {
+    fontSize: 30,
+    color: '#FFF',
+    textAlign: 'center',
+    position: 'absolute',
+  },
+  close: {
+    position: 'absolute',
+    top: 30,
+    right: 30,
+    backgroundColor: 'transparent',
+  },
+  closeText: {
+    fontSize: 30,
+    color: '#FFF',
+  },
+  option: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  yes: {
+    backgroundColor: 'rgba(255,255,255,.1)',
+  },
+  optionText: {
+    fontSize: 30,
+    color: '#FFF',
+    marginBottom: 50,
   },
 });
 
