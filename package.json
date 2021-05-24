@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "clamp": "^1.0.1",
     "d3-interpolate": "^2.0.1",
     "d3-interpolate-path": "^2.2.1",
     "flubber": "^0.4.2",
