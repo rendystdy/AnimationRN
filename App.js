@@ -1,102 +1,85 @@
 import React, {Component, useRef} from 'react';
 import {
+  AppRegistry,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
   Animated,
-  KeyboardAvoidingView,
-  ImageBackground,
+  TouchableWithoutFeedback,
 } from 'react-native';
 
 import Background from './background.jpg';
-
-const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
-
-const createAnimationStyle = animation => {
-  const translateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-5, 0],
-  });
-
-  return {
-    opacity: animation,
-    transform: [
-      {
-        translateY,
-      },
-    ],
-  };
-};
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      email: new Animated.Value(0),
-      password: new Animated.Value(0),
-      button: new Animated.Value(0),
+      animation: new Animated.Value(0),
+      opacity: new Animated.Value(1),
     };
-    this._email;
   }
 
-  componentDidMount() {
-    Animated.stagger(1000, [
-      Animated.timing(this.state.email, {
-        toValue: 1,
-        duration: 200,
-      }),
-      Animated.timing(this.state.password, {
-        toValue: 1,
-        duration: 200,
-      }),
-      Animated.timing(this.state.button, {
-        toValue: 1,
-        duration: 200,
-      }),
-    ]).start(() => {
-      this._email.getNode().focus();
+  handlePress = () => {
+    this.state.animation.setValue(0);
+    this.state.opacity.setValue(1);
+
+    Animated.timing(this.state.animation, {
+      duration: 1500,
+      toValue: 1,
+    }).start(({finished}) => {
+      if (finished) {
+        Animated.timing(this.state.opacity, {
+          toValue: 0,
+          duration: 200,
+        }).start();
+      }
     });
-  }
+  };
 
   render() {
-    const emailStyle = createAnimationStyle(this.state.email);
-    const passwordStyle = createAnimationStyle(this.state.password);
-    const buttonStyle = createAnimationStyle(this.state.button);
+    const progressInterpolate = this.state.animation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+      extrapolate: 'clamp',
+    });
+
+    const colorInterpolate = this.state.animation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['rgb(71,255,99)', 'rgb(99,71,255)'],
+    });
+
+    const progressStyle = {
+      width: progressInterpolate,
+      bottom: 0,
+
+      // height: progressInterpolate,
+      // right: 0,
+
+      // top: null,
+      // bottom: 0,
+      // width: progressInterpolate,
+      // height: 5,
+
+      opacity: this.state.opacity,
+      backgroundColor: colorInterpolate,
+    };
 
     return (
       <View style={styles.container}>
-        <ImageBackground
-          source={Background}
-          resizeMode="cover"
-          style={[StyleSheet.absoluteFill, {width: null, height: null}]}>
-          <View style={styles.container} />
-          <KeyboardAvoidingView style={styles.form} behavior="padding">
-            <View style={styles.container}>
-              <Text style={styles.title}>Login</Text>
-              <AnimatedTextInput
-                ref={email => {
-                  this._email = email;
-                }}
-                style={[styles.input, emailStyle]}
-                placeholder="Email"
-                keyboardType="email-address"
+        <TouchableWithoutFeedback onPress={this.handlePress}>
+          <View style={styles.button}>
+            <View style={StyleSheet.absoluteFill}>
+              <Animated.View
+                style={[
+                  styles.progress,
+                  progressStyle,
+                  styles.opacityBackground,
+                ]}
               />
-              <AnimatedTextInput
-                placeholder="Password"
-                style={[styles.input, passwordStyle]}
-                secureTextEntry
-              />
-              <TouchableOpacity>
-                <Animated.View style={[styles.button, buttonStyle]}>
-                  <Text style={styles.buttonText}>Login</Text>
-                </Animated.View>
-              </TouchableOpacity>
             </View>
-          </KeyboardAvoidingView>
-          <View style={styles.container} />
-        </ImageBackground>
+            <Text style={styles.buttonText}>Get it!</Text>
+          </View>
+        </TouchableWithoutFeedback>
       </View>
     );
   }
@@ -105,43 +88,30 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  title: {
-    fontSize: 30,
-    color: '#FFF',
-    backgroundColor: 'transparent',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  form: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,.25)',
-    paddingVertical: 10,
-  },
-  input: {
-    width: 250,
-    height: 35,
-    paddingHorizontal: 10,
-    marginVertical: 5,
-    borderWidth: 1,
-    borderRadius: 5,
-    borderColor: '#FFF',
-    color: '#333',
-    backgroundColor: '#FFF',
   },
   button: {
-    marginTop: 10,
-    backgroundColor: 'tomato',
+    backgroundColor: '#e6537d',
+    borderRadius: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 60,
     paddingVertical: 10,
-    paddingHorizontal: 5,
-    borderRadius: 5,
+    overflow: 'hidden',
   },
   buttonText: {
-    textAlign: 'center',
     color: '#FFF',
-    fontSize: 16,
+    fontSize: 24,
+    backgroundColor: 'transparent',
+  },
+  progress: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  opacityBackground: {
+    // backgroundColor: "rgba(255,255,255,.5)",
   },
 });
 
