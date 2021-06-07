@@ -1,136 +1,199 @@
 import React, {Component, useRef} from 'react';
 import {
+  AppRegistry,
   StyleSheet,
   Text,
   View,
+  Image,
   Animated,
-  TouchableOpacity,
-  Dimensions,
+  ScrollView,
+  TouchableWithoutFeedback,
 } from 'react-native';
 
+import images from './images';
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      index: 0,
-      questions: [
-        'Do you tend to follow directions when given?',
-        'Are you comfortable with the idea of standing and doing light physical activity most of the day?',
-        'Would you enjoy making sure your customers leave happy?',
-        'Are you willing to work nights and weekends (and possibly holidays)?',
-      ],
+      activeImage: null,
       animation: new Animated.Value(0),
-      progress: new Animated.Value(0),
+      position: new Animated.ValueXY(),
+      size: new Animated.ValueXY(),
     };
   }
 
-  reset = () => {
-    this.state.animation.setValue(0);
-    this.state.progress.setValue(0);
-    this.setState({
-      index: 0,
-    });
+  componentWillMount() {
+    this._gridImages = {};
+  }
+
+  handleOpenImage = index => {
+    this._gridImages[index]
+      .getNode()
+      .measure((x, y, width, height, pageX, pageY) => {
+        (this._x = pageX), (this._y = pageY);
+        this._width = width;
+        this._height = height;
+
+        this.state.position.setValue({
+          x: pageX,
+          y: pageY,
+        });
+
+        this.state.size.setValue({
+          x: width,
+          y: height,
+        });
+
+        this.setState(
+          {
+            activeImage: images[index],
+            activeIndex: index,
+          },
+          () => {
+            this._viewImage.measure(
+              (tX, tY, tWidth, tHeight, tPageX, tPageY) => {
+                Animated.parallel([
+                  Animated.spring(this.state.position.x, {
+                    toValue: tPageX,
+                  }),
+                  Animated.spring(this.state.position.y, {
+                    toValue: tPageY,
+                  }),
+                  Animated.spring(this.state.size.x, {
+                    toValue: tWidth,
+                  }),
+                  Animated.spring(this.state.size.y, {
+                    toValue: tHeight,
+                  }),
+                  Animated.spring(this.state.animation, {
+                    toValue: 1,
+                  }),
+                ]).start();
+              },
+            );
+          },
+        );
+      });
   };
 
-  handleAnswer = () => {
+  handleClose = () => {
     Animated.parallel([
-      Animated.timing(this.state.progress, {
-        toValue: this.state.index + 1,
-        duration: 400,
+      Animated.timing(this.state.position.x, {
+        toValue: this._x,
+        duration: 250,
+      }),
+      Animated.timing(this.state.position.y, {
+        toValue: this._y,
+        duration: 250,
+      }),
+      Animated.timing(this.state.size.x, {
+        toValue: this._width,
+        duration: 250,
+      }),
+      Animated.timing(this.state.size.y, {
+        toValue: this._height,
+        duration: 250,
       }),
       Animated.timing(this.state.animation, {
-        toValue: 1,
-        duration: 400,
+        toValue: 0,
+        duration: 250,
       }),
     ]).start(() => {
-      this.setState(
-        state => {
-          return {
-            index: state.index + 1,
-          };
-        },
-        () => {
-          this.state.animation.setValue(0);
-        },
-      );
+      this.setState({
+        activeImage: null,
+      });
     });
   };
 
   render() {
-    const {index, questions} = this.state;
-    const {width} = Dimensions.get('window');
-
-    const nextQuestionInterpolate = this.state.animation.interpolate({
+    const animatedContentTranslate = this.state.animation.interpolate({
       inputRange: [0, 1],
-      outputRange: [width, 0],
+      outputRange: [300, 0],
     });
 
-    const mainQuestionInterpolate = this.state.animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, -width],
-    });
-
-    const progressInterpolate = this.state.progress.interpolate({
-      inputRange: [0, questions.length],
-      outputRange: ['0%', '100%'],
-    });
-
-    const progressStyle = {
-      width: progressInterpolate,
-    };
-
-    const mainQuestionStyle = {
+    const animtedContentStyles = {
+      opacity: this.state.animation,
       transform: [
         {
-          translateX: mainQuestionInterpolate,
+          translateY: animatedContentTranslate,
         },
       ],
     };
 
-    const nextQuestionStyle = {
-      transform: [
-        {
-          translateX: nextQuestionInterpolate,
-        },
-      ],
+    const animatedClose = {
+      opacity: this.state.animation,
     };
 
-    const question = questions[index];
-    let nextQuestion;
-    if (index + 1 < questions.length) {
-      nextQuestion = questions[index + 1];
-    }
+    const activeImageStyle = {
+      width: this.state.size.x,
+      height: this.state.size.y,
+      top: this.state.position.y,
+      left: this.state.position.x,
+    };
+
+    const activeIndexStyle = {
+      opacity: this.state.activeImage ? 0 : 1,
+    };
 
     return (
       <View style={styles.container}>
-        <View style={[styles.overlay, StyleSheet.absoluteFill]}>
-          <Animated.Text style={[styles.questionText, mainQuestionStyle]}>
-            {question}
-          </Animated.Text>
-          <Animated.Text style={[styles.questionText, nextQuestionStyle]}>
-            {nextQuestion}
-          </Animated.Text>
-        </View>
+        <ScrollView style={styles.container}>
+          <View style={styles.grid}>
+            {images.map((src, index) => {
+              const style =
+                index === this.state.activeIndex ? activeIndexStyle : undefined;
 
-        <View style={styles.progress}>
-          <Animated.View style={[styles.bar, progressStyle]} />
+              return (
+                <TouchableWithoutFeedback
+                  key={index}
+                  onPress={() => this.handleOpenImage(index)}>
+                  <Animated.Image
+                    source={src}
+                    style={[styles.gridImage, style]}
+                    resizeMode="cover"
+                    ref={image => (this._gridImages[index] = image)}
+                  />
+                </TouchableWithoutFeedback>
+              );
+            })}
+          </View>
+        </ScrollView>
+        <View
+          style={StyleSheet.absoluteFill}
+          pointerEvents={this.state.activeImage ? 'auto' : 'none'}>
+          <View
+            style={styles.topContent}
+            ref={image => (this._viewImage = image)}>
+            <Animated.Image
+              key={this.state.activeImage}
+              source={this.state.activeImage}
+              resizeMode="cover"
+              style={[styles.viewImage, activeImageStyle]}
+            />
+          </View>
+          <Animated.View
+            style={[styles.content, animtedContentStyles]}
+            ref={content => (this._content = content)}>
+            <Text style={styles.title}>Pretty Image from Unsplash</Text>
+            <Text>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec
+              lobortis interdum porttitor. Nam lorem justo, aliquam id feugiat
+              quis, malesuada sit amet massa. Sed fringilla lorem sit amet metus
+              convallis, et vulputate mauris convallis. Donec venenatis
+              tincidunt elit, sed molestie massa. Fusce scelerisque nulla vitae
+              mollis lobortis. Ut bibendum risus ac rutrum lacinia. Proin vel
+              viverra tellus, et venenatis massa. Maecenas ac gravida purus, in
+              porttitor nulla. Integer vitae dui tincidunt, blandit felis eu,
+              fermentum lorem. Mauris condimentum, lorem id convallis fringilla,
+              purus orci viverra metus, eget finibus neque turpis sed turpis.
+            </Text>
+          </Animated.View>
+          <TouchableWithoutFeedback onPress={this.handleClose}>
+            <Animated.View style={[styles.close, animatedClose]}>
+              <Text style={styles.closeText}>X</Text>
+            </Animated.View>
+          </TouchableWithoutFeedback>
         </View>
-
-        <TouchableOpacity
-          onPress={this.handleAnswer}
-          style={styles.option}
-          activeOpacity={0.7}>
-          <Text style={styles.optionText}>No</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={this.handleAnswer}
-          style={[styles.option, styles.yes]}
-          activeOpacity={0.7}>
-          <Text style={styles.optionText}>Yes</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.close} onPress={this.reset}>
-          <Text style={styles.closeText}>X</Text>
-        </TouchableOpacity>
       </View>
     );
   }
@@ -139,52 +202,41 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E22D4B',
+  },
+  grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
   },
-  progress: {
+  gridImage: {
+    width: '33%',
+    height: 150,
+  },
+  viewImage: {
+    width: null,
+    height: null,
     position: 'absolute',
+    top: 0,
     left: 0,
-    bottom: 0,
-    right: 0,
-    height: 10,
   },
-  bar: {
-    height: '100%',
+  topContent: {
+    flex: 1,
+  },
+  content: {
+    flex: 2,
     backgroundColor: '#FFF',
   },
-  overlay: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  questionText: {
-    fontSize: 30,
-    color: '#FFF',
-    textAlign: 'center',
-    position: 'absolute',
+  title: {
+    fontSize: 28,
   },
   close: {
     position: 'absolute',
     top: 30,
-    right: 30,
-    backgroundColor: 'transparent',
+    right: 20,
   },
   closeText: {
-    fontSize: 30,
+    backgroundColor: 'transparent',
+    fontSize: 28,
     color: '#FFF',
-  },
-  option: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  yes: {
-    backgroundColor: 'rgba(255,255,255,.1)',
-  },
-  optionText: {
-    fontSize: 30,
-    color: '#FFF',
-    marginBottom: 50,
   },
 });
 
