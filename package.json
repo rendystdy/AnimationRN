@@ -16,7 +16,8 @@
     "flubber": "^0.4.2",
     "react": "16.9.0",
     "react-native": "0.61.5",
-    "react-native-svg": "^12.1.1"
+    "react-native-svg": "^12.1.1",
+    "react-native-vector-icons": "^8.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.6.2",

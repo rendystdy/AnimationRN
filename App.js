@@ -8,192 +8,187 @@ import {
   Animated,
   ScrollView,
   TouchableWithoutFeedback,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 
-import images from './images';
+import Icon from 'react-native-vector-icons/Foundation';
+
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
+const AnimatedIcon = Animated.createAnimatedComponent(Icon);
+
+Icon.loadFont();
+
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      activeImage: null,
       animation: new Animated.Value(0),
-      position: new Animated.ValueXY(),
-      size: new Animated.ValueXY(),
+      buttonAnimation: new Animated.Value(0),
+      color: '#000',
+      inputOpen: false,
     };
   }
 
-  componentWillMount() {
-    this._gridImages = {};
-  }
+  handleToggle = () => {
+    const toValue = this._open ? 0 : 1;
 
-  handleOpenImage = index => {
-    this._gridImages[index]
-      .getNode()
-      .measure((x, y, width, height, pageX, pageY) => {
-        (this._x = pageX), (this._y = pageY);
-        this._width = width;
-        this._height = height;
+    Animated.spring(this.state.animation, {
+      toValue,
+    }).start();
 
-        this.state.position.setValue({
-          x: pageX,
-          y: pageY,
-        });
-
-        this.state.size.setValue({
-          x: width,
-          y: height,
-        });
-
-        this.setState(
-          {
-            activeImage: images[index],
-            activeIndex: index,
-          },
-          () => {
-            this._viewImage.measure(
-              (tX, tY, tWidth, tHeight, tPageX, tPageY) => {
-                Animated.parallel([
-                  Animated.spring(this.state.position.x, {
-                    toValue: tPageX,
-                  }),
-                  Animated.spring(this.state.position.y, {
-                    toValue: tPageY,
-                  }),
-                  Animated.spring(this.state.size.x, {
-                    toValue: tWidth,
-                  }),
-                  Animated.spring(this.state.size.y, {
-                    toValue: tHeight,
-                  }),
-                  Animated.spring(this.state.animation, {
-                    toValue: 1,
-                  }),
-                ]).start();
-              },
-            );
-          },
-        );
-      });
+    this._open = !this._open;
   };
 
-  handleClose = () => {
-    Animated.parallel([
-      Animated.timing(this.state.position.x, {
-        toValue: this._x,
-        duration: 250,
-      }),
-      Animated.timing(this.state.position.y, {
-        toValue: this._y,
-        duration: 250,
-      }),
-      Animated.timing(this.state.size.x, {
-        toValue: this._width,
-        duration: 250,
-      }),
-      Animated.timing(this.state.size.y, {
-        toValue: this._height,
-        duration: 250,
-      }),
-      Animated.timing(this.state.animation, {
-        toValue: 0,
-        duration: 250,
-      }),
-    ]).start(() => {
-      this.setState({
-        activeImage: null,
-      });
-    });
+  toggleInput = () => {
+    const toValue = this._inputOpen ? 0 : 1;
+    Animated.timing(this.state.buttonAnimation, {
+      toValue,
+      duration: 350,
+    }).start();
+
+    this._inputOpen = !this._inputOpen;
+    this.setState(
+      {
+        inputOpen: this._inputOpen,
+      },
+      () => {
+        !this.state.inputOpen
+          ? this._input.getNode().blur()
+          : this._input.getNode().focus();
+      },
+    );
   };
 
   render() {
-    const animatedContentTranslate = this.state.animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [300, 0],
+    const colorStyle = {
+      backgroundColor: this.state.color,
+    };
+
+    const scaleXInterpolate = this.state.animation.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0, 0, 1],
     });
 
-    const animtedContentStyles = {
+    const translateYInterpolate = this.state.animation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [150, 0],
+    });
+
+    const rowStyle = {
       opacity: this.state.animation,
       transform: [
+        {translateY: translateYInterpolate},
+        {scaleY: this.state.animation},
+        {scaleX: scaleXInterpolate},
+      ],
+    };
+
+    const moveInterpolate = this.state.buttonAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-150, 0],
+    });
+
+    const inputOpacityInterpolate = this.state.buttonAnimation.interpolate({
+      inputRange: [0, 0.8, 1],
+      outputRange: [0, 0, 1],
+    });
+
+    const inputStyle = {
+      opacity: inputOpacityInterpolate,
+    };
+
+    const buttonStyle = {
+      transform: [
         {
-          translateY: animatedContentTranslate,
+          translateX: moveInterpolate,
+        },
+        {
+          scale: this.state.buttonAnimation,
         },
       ],
     };
 
-    const animatedClose = {
-      opacity: this.state.animation,
-    };
+    const iconTranslate = this.state.buttonAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, -20],
+    });
 
-    const activeImageStyle = {
-      width: this.state.size.x,
-      height: this.state.size.y,
-      top: this.state.position.y,
-      left: this.state.position.x,
-    };
+    const opacityIconInterpolate = this.state.buttonAnimation.interpolate({
+      inputRange: [0, 0.2],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
+    });
 
-    const activeIndexStyle = {
-      opacity: this.state.activeImage ? 0 : 1,
+    const iconStyle = {
+      opacity: opacityIconInterpolate,
+      transform: [{translateX: iconTranslate}],
     };
 
     return (
       <View style={styles.container}>
-        <ScrollView style={styles.container}>
-          <View style={styles.grid}>
-            {images.map((src, index) => {
-              const style =
-                index === this.state.activeIndex ? activeIndexStyle : undefined;
-
-              return (
-                <TouchableWithoutFeedback
-                  key={index}
-                  onPress={() => this.handleOpenImage(index)}>
-                  <Animated.Image
-                    source={src}
-                    style={[styles.gridImage, style]}
-                    resizeMode="cover"
-                    ref={image => (this._gridImages[index] = image)}
-                  />
-                </TouchableWithoutFeedback>
-              );
-            })}
-          </View>
-        </ScrollView>
-        <View
-          style={StyleSheet.absoluteFill}
-          pointerEvents={this.state.activeImage ? 'auto' : 'none'}>
-          <View
-            style={styles.topContent}
-            ref={image => (this._viewImage = image)}>
-            <Animated.Image
-              key={this.state.activeImage}
-              source={this.state.activeImage}
-              resizeMode="cover"
-              style={[styles.viewImage, activeImageStyle]}
-            />
-          </View>
-          <Animated.View
-            style={[styles.content, animtedContentStyles]}
-            ref={content => (this._content = content)}>
-            <Text style={styles.title}>Pretty Image from Unsplash</Text>
-            <Text>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec
-              lobortis interdum porttitor. Nam lorem justo, aliquam id feugiat
-              quis, malesuada sit amet massa. Sed fringilla lorem sit amet metus
-              convallis, et vulputate mauris convallis. Donec venenatis
-              tincidunt elit, sed molestie massa. Fusce scelerisque nulla vitae
-              mollis lobortis. Ut bibendum risus ac rutrum lacinia. Proin vel
-              viverra tellus, et venenatis massa. Maecenas ac gravida purus, in
-              porttitor nulla. Integer vitae dui tincidunt, blandit felis eu,
-              fermentum lorem. Mauris condimentum, lorem id convallis fringilla,
-              purus orci viverra metus, eget finibus neque turpis sed turpis.
-            </Text>
-          </Animated.View>
-          <TouchableWithoutFeedback onPress={this.handleClose}>
-            <Animated.View style={[styles.close, animatedClose]}>
-              <Text style={styles.closeText}>X</Text>
-            </Animated.View>
+        <Animated.View style={[styles.rowWrap, rowStyle]}>
+          <TouchableWithoutFeedback onPress={this.toggleInput}>
+            <Animated.View style={[styles.colorBall, colorStyle]} />
           </TouchableWithoutFeedback>
-        </View>
+          <View style={styles.row}>
+            <TouchableOpacity>
+              <AnimatedIcon
+                name="bold"
+                size={30}
+                color="#555"
+                style={iconStyle}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <AnimatedIcon
+                name="italic"
+                size={30}
+                color="#555"
+                style={iconStyle}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <AnimatedIcon
+                name="align-center"
+                size={30}
+                color="#555"
+                style={iconStyle}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <AnimatedIcon
+                name="link"
+                size={30}
+                color="#555"
+                style={iconStyle}
+              />
+            </TouchableOpacity>
+
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.colorRowWrap,
+                // colorRowStyles,
+              ]}
+              pointerEvents={this.state.inputOpen ? 'auto' : 'none'}>
+              <AnimatedTextInput
+                value={this.state.color}
+                style={[styles.input, inputStyle]}
+                onChangeText={color => this.setState({color})}
+                ref={input => (this._input = input)}
+              />
+              <TouchableWithoutFeedback onPress={this.toggleInput}>
+                <Animated.View style={[styles.okayButton, buttonStyle]}>
+                  <Text style={styles.okayText}>OK</Text>
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </Animated.View>
+          </View>
+        </Animated.View>
+        <TouchableOpacity onPress={this.handleToggle} style={styles.button}>
+          <Text>Toggle Open/Closed</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -202,41 +197,56 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  grid: {
+  rowWrap: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    minWidth: '50%',
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    shadowColor: '#333',
+    shadowOpacity: 0.2,
+    shadowOffset: {x: 2, y: 2},
+    shadowRadius: 3,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
-  gridImage: {
-    width: '33%',
-    height: 150,
+  row: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    flexDirection: 'row',
+    overflow: 'hidden',
   },
-  viewImage: {
-    width: null,
-    height: null,
-    position: 'absolute',
-    top: 0,
-    left: 0,
+
+  colorRowWrap: {
+    flexDirection: 'row',
+    flex: 1,
+    paddingLeft: 5,
   },
-  topContent: {
+  input: {
     flex: 1,
   },
-  content: {
-    flex: 2,
-    backgroundColor: '#FFF',
+  okayButton: {
+    borderRadius: 20,
+    height: '100%',
+    width: 40,
+    backgroundColor: '#309EEB',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-  },
-  close: {
-    position: 'absolute',
-    top: 30,
-    right: 20,
-  },
-  closeText: {
-    backgroundColor: 'transparent',
-    fontSize: 28,
+  okayText: {
     color: '#FFF',
+  },
+  colorBall: {
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+  },
+  button: {
+    marginTop: 50,
   },
 });
 
