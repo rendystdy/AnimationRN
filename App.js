@@ -1,21 +1,14 @@
 import React, {Component, useRef} from 'react';
 import {
-  AppRegistry,
   StyleSheet,
-  Text,
   View,
-  Image,
   Animated,
-  ScrollView,
-  TouchableWithoutFeedback,
-  TextInput,
+  Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Foundation';
-
-const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
-const AnimatedIcon = Animated.createAnimatedComponent(Icon);
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 Icon.loadFont();
 
@@ -24,171 +17,96 @@ class App extends Component {
     super(props);
     this.state = {
       animation: new Animated.Value(0),
-      buttonAnimation: new Animated.Value(0),
-      color: '#000',
-      inputOpen: false,
     };
   }
 
-  handleToggle = () => {
+  toggleOpen = () => {
     const toValue = this._open ? 0 : 1;
 
-    Animated.spring(this.state.animation, {
+    Animated.timing(this.state.animation, {
       toValue,
+      duration: 200,
     }).start();
 
     this._open = !this._open;
   };
 
-  toggleInput = () => {
-    const toValue = this._inputOpen ? 0 : 1;
-    Animated.timing(this.state.buttonAnimation, {
-      toValue,
-      duration: 350,
-    }).start();
-
-    this._inputOpen = !this._inputOpen;
-    this.setState(
-      {
-        inputOpen: this._inputOpen,
-      },
-      () => {
-        !this.state.inputOpen
-          ? this._input.getNode().blur()
-          : this._input.getNode().focus();
-      },
-    );
-  };
-
   render() {
-    const colorStyle = {
-      backgroundColor: this.state.color,
-    };
-
-    const scaleXInterpolate = this.state.animation.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0, 0, 1],
-    });
-
-    const translateYInterpolate = this.state.animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [150, 0],
-    });
-
-    const rowStyle = {
-      opacity: this.state.animation,
+    const bgStyle = {
       transform: [
-        {translateY: translateYInterpolate},
-        {scaleY: this.state.animation},
-        {scaleX: scaleXInterpolate},
+        {
+          scale: this.state.animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 40],
+          }),
+        },
+      ],
+    };
+    const reloadStyle = {
+      transform: [
+        {scale: this.state.animation},
+        {
+          translateY: this.state.animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -70],
+          }),
+        },
       ],
     };
 
-    const moveInterpolate = this.state.buttonAnimation.interpolate({
+    const orderStyle = {
+      transform: [
+        {scale: this.state.animation},
+        {
+          translateY: this.state.animation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -140],
+          }),
+        },
+      ],
+    };
+
+    const labelPositionInterpolate = this.state.animation.interpolate({
       inputRange: [0, 1],
-      outputRange: [-150, 0],
+      outputRange: [-30, -90],
     });
 
-    const inputOpacityInterpolate = this.state.buttonAnimation.interpolate({
+    const opacityInterpolate = this.state.animation.interpolate({
       inputRange: [0, 0.8, 1],
       outputRange: [0, 0, 1],
     });
 
-    const inputStyle = {
-      opacity: inputOpacityInterpolate,
+    const labelStyle = {
+      opacity: opacityInterpolate,
+      transform: [{translateX: labelPositionInterpolate}],
     };
-
-    const buttonStyle = {
-      transform: [
-        {
-          translateX: moveInterpolate,
-        },
-        {
-          scale: this.state.buttonAnimation,
-        },
-      ],
-    };
-
-    const iconTranslate = this.state.buttonAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, -20],
-    });
-
-    const opacityIconInterpolate = this.state.buttonAnimation.interpolate({
-      inputRange: [0, 0.2],
-      outputRange: [1, 0],
-      extrapolate: 'clamp',
-    });
-
-    const iconStyle = {
-      opacity: opacityIconInterpolate,
-      transform: [{translateX: iconTranslate}],
-    };
-
     return (
       <View style={styles.container}>
-        <Animated.View style={[styles.rowWrap, rowStyle]}>
-          <TouchableWithoutFeedback onPress={this.toggleInput}>
-            <Animated.View style={[styles.colorBall, colorStyle]} />
-          </TouchableWithoutFeedback>
-          <View style={styles.row}>
-            <TouchableOpacity>
-              <AnimatedIcon
-                name="bold"
-                size={30}
-                color="#555"
-                style={iconStyle}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <AnimatedIcon
-                name="italic"
-                size={30}
-                color="#555"
-                style={iconStyle}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <AnimatedIcon
-                name="align-center"
-                size={30}
-                color="#555"
-                style={iconStyle}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <AnimatedIcon
-                name="link"
-                size={30}
-                color="#555"
-                style={iconStyle}
-              />
-            </TouchableOpacity>
-
-            <Animated.View
-              style={[
-                StyleSheet.absoluteFill,
-                styles.colorRowWrap,
-                // colorRowStyles,
-              ]}
-              pointerEvents={this.state.inputOpen ? 'auto' : 'none'}>
-              <AnimatedTextInput
-                value={this.state.color}
-                style={[styles.input, inputStyle]}
-                onChangeText={color => this.setState({color})}
-                ref={input => (this._input = input)}
-              />
-              <TouchableWithoutFeedback onPress={this.toggleInput}>
-                <Animated.View style={[styles.okayButton, buttonStyle]}>
-                  <Text style={styles.okayText}>OK</Text>
-                </Animated.View>
-              </TouchableWithoutFeedback>
-            </Animated.View>
+        <Animated.View style={[styles.background, bgStyle]} />
+        <TouchableWithoutFeedback>
+          <Animated.View style={[styles.button, styles.other, orderStyle]}>
+            <Animated.Text style={[styles.label, labelStyle]}>
+              Order
+            </Animated.Text>
+            <Icon name="food-fork-drink" size={20} color="#555" />
+          </Animated.View>
+        </TouchableWithoutFeedback>
+        <TouchableWithoutFeedback>
+          <Animated.View style={[styles.button, styles.other, reloadStyle]}>
+            <Animated.Text style={[styles.label, labelStyle]}>
+              Reload
+            </Animated.Text>
+            <Icon name="reload" size={20} color="#555" />
+          </Animated.View>
+        </TouchableWithoutFeedback>
+        <TouchableWithoutFeedback onPress={this.toggleOpen}>
+          <View style={[styles.button, styles.pay]}>
+            <Animated.Text style={[styles.label, labelStyle]}>
+              Pay
+            </Animated.Text>
+            <Text style={styles.payText}>$5.00</Text>
           </View>
-        </Animated.View>
-        <TouchableOpacity onPress={this.handleToggle} style={styles.button}>
-          <Text>Toggle Open/Closed</Text>
-        </TouchableOpacity>
+        </TouchableWithoutFeedback>
       </View>
     );
   }
@@ -197,56 +115,44 @@ class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  rowWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: '50%',
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    shadowColor: '#333',
-    shadowOpacity: 0.2,
-    shadowOffset: {x: 2, y: 2},
-    shadowRadius: 3,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  row: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    flexDirection: 'row',
-    overflow: 'hidden',
-  },
-
-  colorRowWrap: {
-    flexDirection: 'row',
-    flex: 1,
-    paddingLeft: 5,
-  },
-  input: {
-    flex: 1,
-  },
-  okayButton: {
-    borderRadius: 20,
-    height: '100%',
-    width: 40,
-    backgroundColor: '#309EEB',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  okayText: {
-    color: '#FFF',
-  },
-  colorBall: {
-    width: 15,
-    height: 15,
-    borderRadius: 8,
+  background: {
+    backgroundColor: 'rgba(0,0,0,.2)',
+    position: 'absolute',
+    width: 60,
+    height: 60,
+    bottom: 20,
+    right: 20,
+    borderRadius: 30,
   },
   button: {
-    marginTop: 50,
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#333',
+    shadowOpacity: 0.1,
+    shadowOffset: {x: 2, y: 0},
+    shadowRadius: 2,
+    borderRadius: 30,
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+  },
+  other: {
+    backgroundColor: '#FFF',
+  },
+  payText: {
+    color: '#FFF',
+  },
+  pay: {
+    backgroundColor: '#00B15E',
+  },
+  label: {
+    color: '#fff',
+    position: 'absolute',
+    fontSize: 18,
+    backgroundColor: 'transparent',
   },
 });
 
